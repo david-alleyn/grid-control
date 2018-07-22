@@ -9,7 +9,7 @@ import threading
 
 import grid
 import helper
-import openhwmon
+# import openhwmon
 import polling
 import serial
 import settings
@@ -52,7 +52,8 @@ class GridControl(QtWidgets.QMainWindow):
 
         # Initialize WMI communication with OpenHardwareMonitor
         # "initialize_hwmon()" returns a WMI object
-        self.hwmon = openhwmon.initialize_hwmon()
+        # self.hwmon = openhwmon.initialize_hwmon()
+        self.hwmon = 0
 
         # QSettings object for storing the UI configuration in the OS native repository (Registry for Windows, ini-file for Linux)
         # In Windows, parameters will be stored at HKEY_CURRENT_USER/SOFTWARE/GridControl/App
@@ -70,7 +71,7 @@ class GridControl(QtWidgets.QMainWindow):
 
 
         # Populates the tree widget on tab "Sensor Config" with values from OpenHardwareMonitor
-        openhwmon.populate_tree(self.hwmon, self.ui.treeWidgetHWMonData, self.ui.checkBoxStartSilently.isChecked())
+        # openhwmon.populate_tree(self.hwmon, self.ui.treeWidgetHWMonData, self.ui.checkBoxStartSilently.isChecked())
 
         # System tray icon
         self.trayIcon = SystemTrayIcon(QtGui.QIcon(QtGui.QPixmap(":/icons/grid.png")), self)

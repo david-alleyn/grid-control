@@ -6,7 +6,7 @@
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-import openhwmon
+# import openhwmon
 
 
 def read_settings(config, ui, hwmon):
@@ -56,7 +56,7 @@ def read_settings(config, ui, hwmon):
     # ------------------------
 
     # Get all available temperature sensors
-    sensors = openhwmon.get_temperature_sensors(hwmon)
+    sensors = []
 
     # Selected CPU sensors
     parent = ui.treeWidgetSelectedCPUSensors

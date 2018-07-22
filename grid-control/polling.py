@@ -8,13 +8,13 @@
 import sys
 import time
 
-import pythoncom
-import wmi
+# import pythoncom
+# import wmi
 from PyQt5 import QtCore
 
 import grid
 import helper
-import openhwmon
+# import openhwmon
 
 # Define status icons (available in the resource file built with "pyrcc5"
 ICON_RED_LED = ":/icons/led-red-on.png"
@@ -102,7 +102,7 @@ class PollingThread(QtCore.QThread):
         print("Thread stopped")
 
         # Uninitialize at thread stop (used for WMI in thread)
-        pythoncom.CoUninitialize()
+        # pythoncom.CoUninitialize()
 
     def set_temp_calc(self, cpu_calc, gpu_calc):
         """Setter for cpu and gpu calc parameter."""
@@ -199,10 +199,10 @@ class PollingThread(QtCore.QThread):
 
             # CoInitialise() is needed when accessing WMI in a thread
             # CoUninitialize() is called in the stop method
-            pythoncom.CoInitialize()
+            # pythoncom.CoInitialize()
 
             # A new WMI object is needed in the thread
-            hwmon_thread_wmi = wmi.WMI(namespace="root\OpenHardwareMonitor")
+            # hwmon_thread_wmi = wmi.WMI(namespace="root\OpenHardwareMonitor")
 
             # "keep_running" should be True before starting the while loop
             self.keep_running = True
@@ -210,11 +210,11 @@ class PollingThread(QtCore.QThread):
             # Start the main polling loop
             while self.keep_running:
                 # Get current temperature sensors from OpenHardwareMonitor
-                temperature_sensors = openhwmon.get_temperature_sensors(hwmon_thread_wmi)
+                # temperature_sensors = openhwmon.get_temperature_sensors(hwmon_thread_wmi)
 
                 # Calculate CPU and GPU temperatures
-                current_cpu_temp = self.calculate_temp(temperature_sensors, "cpu")
-                current_gpu_temp = self.calculate_temp(temperature_sensors, "gpu")
+                current_cpu_temp = 20
+                current_gpu_temp = 20
 
                 # Emit temperature signals
                 self.cpu_temp_signal.emit(current_cpu_temp)
