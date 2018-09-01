@@ -13,6 +13,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 import helper
 import time
 
+hwmon = None
 
 def initialize_hwmon():
     """Create a WMI object and verify that OpenHardwareMonitor is installed."""
@@ -20,7 +21,6 @@ def initialize_hwmon():
     # Access the OpenHWMon WMI interface
     try:
         hwmon = wmi.WMI(namespace="root\OpenHardwareMonitor")
-        return hwmon
 
     # WMI exception (e.g. no namespace "root\OpenHardwareMonitor" indicates OpenHWMon is not installed
     except:
@@ -29,6 +29,7 @@ def initialize_hwmon():
                           "Latest version is available at:\n\n"
                           "http://openhardwaremonitor.org\n\n"
                           "The application will now exit.")
+        hwmon = None
         sys.exit(0)
 
 
