@@ -8,13 +8,11 @@
 import sys
 import time
 
-# import pythoncom
-# import wmi
 from PyQt5 import QtCore
 
 import grid
 import helper
-# import openhwmon
+import sensors
 
 # Define status icons (available in the resource file built with "pyrcc5"
 ICON_RED_LED = ":/icons/led-red-on.png"
@@ -130,9 +128,11 @@ class PollingThread(QtCore.QThread):
             # Check if any sensors are configured
             if self.cpu_sensor_ids:
                 for id in self.cpu_sensor_ids:
-                    for sensor in temperature_sensors:
-                        if id == sensor.Identifier:
-                            cpu_temps.append(sensor.Value)
+                    id_parts = [x.strip() for x in id.split('<>')]
+                    position_in_dict = temperature_sensors
+                    for id_part in id_parts:
+                        position_in_dict = position_in_dict[id_part]
+                    cpu_temps.append(position_in_dict)
 
                 # Convert to float
                 cpu_temps_float = [float(i) for i in cpu_temps]
@@ -159,9 +159,11 @@ class PollingThread(QtCore.QThread):
             # Check if any sensors are configured
             if self.gpu_sensor_ids:
                 for id in self.gpu_sensor_ids:
-                    for sensor in temperature_sensors:
-                        if id == sensor.Identifier:
-                            gpu_temps.append(sensor.Value)
+                    id_parts = [x.strip() for x in id.split('<>')]
+                    position_in_dict = temperature_sensors
+                    for id_part in id_parts:
+                        position_in_dict = position_in_dict[id_part]
+                    gpu_temps.append(position_in_dict)
 
                 # Convert to float
                 gpu_temps_float = [float(i) for i in gpu_temps]
@@ -210,11 +212,11 @@ class PollingThread(QtCore.QThread):
             # Start the main polling loop
             while self.keep_running:
                 # Get current temperature sensors from OpenHardwareMonitor
-                # temperature_sensors = openhwmon.get_temperature_sensors(hwmon_thread_wmi)
+                sensors_dict = sensors.get_sensors()
 
                 # Calculate CPU and GPU temperatures
-                current_cpu_temp = 20
-                current_gpu_temp = 20
+                current_cpu_temp = self.calculate_temp(sensors_dict, "cpu")
+                current_gpu_temp = self.calculate_temp(sensors_dict, "gpu")
 
                 # Emit temperature signals
                 self.cpu_temp_signal.emit(current_cpu_temp)

@@ -64,7 +64,7 @@ def initialize_grid(ser, lock):
             ser.reset_output_buffer()
 
             # Write data to serial port to initialize the Grid
-            bytes_written = ser.write(serial.to_bytes([0xC0]))
+            ser.write(serial.to_bytes([0xC0]))
 
             # Wait before checking response
             time.sleep(WAIT_GRID)
@@ -144,19 +144,18 @@ def set_fan(ser, fan, voltage, lock):
 
     try:
         with lock:
-            bytes_written = ser.write(serial.to_bytes(serial_data))
+            ser.write(serial.to_bytes(serial_data))
             time.sleep(WAIT_GRID)
 
             # TODO: Check reponse
             # Expected response is one byte
-            response = ser.read(size=1)
+            ser.read(size=1)
             print("Fan " + str(fan) + " updated")
     except Exception as e:
-        helper.show_error("Could not set speed for fan " + str(fan) + ".\n\n"
+        print("Could not set speed for fan " + str(fan) + ".\n\n"
                           "Please check settings for serial port " + str(ser.port) + ".\n\n"
                           "Exception:\n" + str(e) + "\n\n"
-                          "The application will now exit.")
-        sys.exit(0)
+                          "It's possible that Grid-Control is competing for CPU resources.")
 
 def read_fan_rpm(ser, lock):
     """Reads the current rpm of each fan.
@@ -178,7 +177,7 @@ def read_fan_rpm(ser, lock):
 
                 ser.reset_output_buffer()
                 # TODO: Check bytes written
-                bytes_written = ser.write(serial.to_bytes(serial_data))
+                ser.write(serial.to_bytes(serial_data))
 
                 # Wait before checking response
                 time.sleep(WAIT_GRID)
@@ -233,7 +232,7 @@ def read_fan_voltage(ser, lock):
                 serial_data = [0x84, fan]
 
                 ser.reset_output_buffer()
-                bytes_written = ser.write(serial.to_bytes(serial_data))
+                ser.write(serial.to_bytes(serial_data))
 
                 # Wait before checking response
                 time.sleep(WAIT_GRID)

@@ -55,16 +55,14 @@ def read_settings(config, ui, hwmon):
     # "Sensor Config" tab
     # ------------------------
 
-    # Get all available temperature sensors
-    sensors = []
-
     # Selected CPU sensors
     parent = ui.treeWidgetSelectedCPUSensors
     for id in config.value("cpu_sensor_ids", type=str):
         item = QtWidgets.QTreeWidgetItem(parent)
-        for sensor in sensors:
-            if sensor.Identifier == id:
-                item.setText(0, sensor.Name)
+
+        last_id_part = [x.strip() for x in id.split('<>')][-1]
+
+        item.setText(0, last_id_part)
         item.setText(1, id)
         item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
 
@@ -72,9 +70,10 @@ def read_settings(config, ui, hwmon):
     parent = ui.treeWidgetSelectedGPUSensors
     for id in config.value("gpu_sensor_ids", type=str):
         item = QtWidgets.QTreeWidgetItem(parent)
-        for sensor in sensors:
-            if sensor.Identifier == id:
-                item.setText(0, sensor.Name)
+
+        last_id_part = [x.strip() for x in id.split('<>')][-1]
+
+        item.setText(0, last_id_part)
         item.setText(1, id)
         item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
 

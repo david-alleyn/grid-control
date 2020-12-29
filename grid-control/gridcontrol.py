@@ -9,7 +9,7 @@ import threading
 
 import grid
 import helper
-# import openhwmon
+import sensors
 import polling
 import serial
 import settings
@@ -55,6 +55,8 @@ class GridControl(QtWidgets.QMainWindow):
         # self.hwmon = openhwmon.initialize_hwmon()
         self.hwmon = 0
 
+        # If Linux, we use sensors without initialization
+
         # QSettings object for storing the UI configuration in the OS native repository (Registry for Windows, ini-file for Linux)
         # In Windows, parameters will be stored at HKEY_CURRENT_USER/SOFTWARE/GridControl/App
         self.config = QtCore.QSettings('GridControl', 'App')
@@ -71,7 +73,10 @@ class GridControl(QtWidgets.QMainWindow):
 
 
         # Populates the tree widget on tab "Sensor Config" with values from OpenHardwareMonitor
-        # openhwmon.populate_tree(self.hwmon, self.ui.treeWidgetHWMonData, self.ui.checkBoxStartSilently.isChecked())
+        # openhwmon.populate_tree(self.hwmon, self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
+
+        # If Linux
+        sensors.populate_tree(self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
 
         # System tray icon
         self.trayIcon = SystemTrayIcon(QtGui.QIcon(QtGui.QPixmap(":/icons/grid.png")), self)
@@ -301,15 +306,15 @@ class GridControl(QtWidgets.QMainWindow):
         """Define UI parameters that cannot be configured in QT Creator directly."""
 
         # "OpenHardwareMonitor tree widget" configuration
-        self.ui.treeWidgetHWMonData.setHeaderLabels(["Node", "ID", "Temp (at init)"])
-        self.ui.treeWidgetHWMonData.expandAll()
-        self.ui.treeWidgetHWMonData.setSortingEnabled(False)
-        self.ui.treeWidgetHWMonData.sortByColumn(0, 0)
-        self.ui.treeWidgetHWMonData.setColumnWidth(0, 200)
-        self.ui.treeWidgetHWMonData.setColumnWidth(1, 100)
-        self.ui.treeWidgetHWMonData.setColumnWidth(2, 50)
-        # treeWidget.setColumnHidden(1, True)
-        self.ui.treeWidgetHWMonData.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.ui.treeWidgetSensorData.setHeaderLabels(["Node", "ID", "Temp (at init)"])
+        self.ui.treeWidgetSensorData.expandAll()
+        self.ui.treeWidgetSensorData.setSortingEnabled(False)
+        self.ui.treeWidgetSensorData.sortByColumn(0, 0)
+        self.ui.treeWidgetSensorData.setColumnWidth(0, 200)
+        self.ui.treeWidgetSensorData.setColumnWidth(1, 100)
+        self.ui.treeWidgetSensorData.setColumnWidth(2, 50)
+        self.ui.treeWidgetSensorData.setColumnHidden(1, True)
+        self.ui.treeWidgetSensorData.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
 
 
         # "Selected CPU sensors" tree widget configuration
@@ -659,7 +664,7 @@ class GridControl(QtWidgets.QMainWindow):
     def add_cpu_sensors(self):
         """Add selected temperature sensor(s) to the "Selected CPU sensor(s)" three widget."""
 
-        items = [item for item in self.ui.treeWidgetHWMonData.selectedItems()]
+        items = [item for item in self.ui.treeWidgetSensorData.selectedItems()]
 
         # The new items should have the tree widget itself as parent
         parent = self.ui.treeWidgetSelectedCPUSensors
@@ -671,11 +676,11 @@ class GridControl(QtWidgets.QMainWindow):
             sensor_item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
 
         # Deselect all items in the HWMon tree widget after they have been added
-        self.ui.treeWidgetHWMonData.clearSelection()
+        self.ui.treeWidgetSensorData.clearSelection()
 
     def add_gpu_sensors(self):
         """Add selected temperature sensor(s) to the "Selected GPU sensor(s)" three widget."""
-        items = [item for item in self.ui.treeWidgetHWMonData.selectedItems()]
+        items = [item for item in self.ui.treeWidgetSensorData.selectedItems()]
 
         # The new items should have the tree widget itself as parent
         parent = self.ui.treeWidgetSelectedGPUSensors
@@ -687,7 +692,7 @@ class GridControl(QtWidgets.QMainWindow):
             sensor_item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
 
         # Deselect all items in the HWMon tree widget after they have been added
-        self.ui.treeWidgetHWMonData.clearSelection()
+        self.ui.treeWidgetSensorData.clearSelection()
 
     def remove_cpu_sensors(self):
         """Remove selected CPU sensors."""
