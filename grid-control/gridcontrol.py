@@ -9,7 +9,13 @@ import threading
 
 import grid
 import helper
-import sensors
+
+import platform 
+plt = platform.system()
+if plt == "Windows":
+    import openhwmon
+else:
+    import sensors
 import polling
 import serial
 import settings
@@ -52,10 +58,8 @@ class GridControl(QtWidgets.QMainWindow):
 
         # Initialize WMI communication with OpenHardwareMonitor
         # "initialize_hwmon()" returns a WMI object
-        # self.hwmon = openhwmon.initialize_hwmon()
-        self.hwmon = 0
-
-        # If Linux, we use sensors without initialization
+        if plt == "Windows":
+            self.hwmon = openhwmon.initialize_hwmon()
 
         # QSettings object for storing the UI configuration in the OS native repository (Registry for Windows, ini-file for Linux)
         # In Windows, parameters will be stored at HKEY_CURRENT_USER/SOFTWARE/GridControl/App
@@ -68,15 +72,18 @@ class GridControl(QtWidgets.QMainWindow):
         self.ui.comboBoxComPorts.addItems(self.serial_ports)
 
         # Read saved UI configuration
-        settings.read_settings(self.config, self.ui, self.hwmon)
+        if plt == "Windows":
+            settings.read_settings(self.config, self.ui, self.hwmon)
+        else:
+            settings.read_settings(self.config, self.ui, 0)
 
 
 
         # Populates the tree widget on tab "Sensor Config" with values from OpenHardwareMonitor
-        # openhwmon.populate_tree(self.hwmon, self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
-
-        # If Linux
-        sensors.populate_tree(self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
+        if plt == "Windows":
+            openhwmon.populate_tree(self.hwmon, self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
+        else:
+            sensors.populate_tree(self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
 
         # System tray icon
         self.trayIcon = SystemTrayIcon(QtGui.QIcon(QtGui.QPixmap(":/icons/grid.png")), self)
