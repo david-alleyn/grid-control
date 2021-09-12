@@ -203,12 +203,10 @@ def read_fan_rpm(ser, lock):
                     return []
 
             except Exception as e:
-                helper.show_error("Could not read rpm for fan " + str(fan) + ".\n\n"
-                                  "Please check serial port settings.\n\n"
-                                  "Exception:\n" + str(e) + "\n\n"
-                                  "The application will now exit.")
-                print(str(e))
-                sys.exit(0)
+                print("Could not read speed for fan " + str(fan) + ".\n\n"
+                          "Please check settings for serial port " + str(ser.port) + ".\n\n"
+                          "Exception:\n" + str(e) + "\n\n"
+                          "It's possible that Grid-Control is competing for CPU resources.")
 
         # Fan
         return fans
