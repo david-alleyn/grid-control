@@ -1716,7 +1716,7 @@ QTreeWidget {
         </font>
        </property>
        <property name="title">
-        <string>Open Hardware Monitor</string>
+        <string>Sensors Tool</string>
        </property>
        <widget class="QLabel" name="label_151">
         <property name="geometry">
@@ -2349,7 +2349,7 @@ QTreeWidget {
        <property name="title">
         <string>Available temperature sensors</string>
        </property>
-       <widget class="QTreeWidget" name="treeWidgetHWMonData">
+       <widget class="QTreeWidget" name="treeWidgetSensorData">
         <property name="geometry">
          <rect>
           <x>20</x>
@@ -5142,7 +5142,7 @@ QTreeWidget {
      <x>0</x>
      <y>0</y>
      <width>1033</width>
-     <height>26</height>
+     <height>30</height>
     </rect>
    </property>
   </widget>
@@ -5224,7 +5224,7 @@ QTreeWidget {
   <tabstop>radioButtonCPUFan6</tabstop>
   <tabstop>radioButtonGPUFan6</tabstop>
   <tabstop>treeWidgetSelectedGPUSensors</tabstop>
-  <tabstop>treeWidgetHWMonData</tabstop>
+  <tabstop>treeWidgetSensorData</tabstop>
   <tabstop>radioButtonCPUFan4</tabstop>
   <tabstop>treeWidgetSelectedCPUSensors</tabstop>
   <tabstop>radioButtonGPUAverage</tabstop>

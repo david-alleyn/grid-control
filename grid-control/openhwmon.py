@@ -7,7 +7,11 @@
 
 import sys
 
-import wmi
+import platform 
+plt = platform.system()
+
+if plt == "Windows":
+    import wmi
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 import helper
