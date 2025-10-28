@@ -4,16 +4,13 @@
     Implements functions for reading and writing UI configuration using a QSettings object.
 """
 
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt6 import QtCore, QtWidgets, QtGui
 
 import platform 
 plt = platform.system()
 
-if plt == "Windows":
-    import openhwmon
 
-
-def read_settings(config, ui, hwmon):
+def read_settings(config, ui):
     """Read configuration from the OS repository (Registry in Windows, ini-file in Linux).
 
     Uses default values if no settings are found.
@@ -59,10 +56,6 @@ def read_settings(config, ui, hwmon):
     # "Sensor Config" tab
     # ------------------------
 
-    if plt == "Windows":
-        # Get all available temperature sensors
-        sensors = openhwmon.get_temperature_sensors(hwmon)
-
     # Selected CPU sensors
     parent = ui.treeWidgetSelectedCPUSensors
     for id in config.value("cpu_sensor_ids", type=str):
@@ -76,7 +69,7 @@ def read_settings(config, ui, hwmon):
             item.setText(0, last_id_part)
 
         item.setText(1, id)
-        item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
+        item.setForeground(0, QtGui.QBrush(QtCore.Qt.GlobalColor.blue))  # Text color blue
 
     # Selected GPU sensors
     parent = ui.treeWidgetSelectedGPUSensors
@@ -91,7 +84,7 @@ def read_settings(config, ui, hwmon):
             item.setText(0, last_id_part)
             
         item.setText(1, id)
-        item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
+        item.setForeground(0, QtGui.QBrush(QtCore.Qt.GlobalColor.blue))  # Text color blue
 
     # Radio buttons
     ui.radioButtonCPUMax.setChecked(config.value("cpu_use_max", True, type=bool))

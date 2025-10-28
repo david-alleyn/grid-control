@@ -8,7 +8,7 @@ import io
 import sys
 import traceback
 
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt6 import QtCore, QtWidgets, QtGui
 
 
 def excepthook(excType, excValue, tracebackobj):
@@ -34,12 +34,12 @@ def excepthook(excType, excValue, tracebackobj):
 
     error_box.setText(str(notice)+str(msg))
     error_box.setWindowTitle("Grid Control - unhandled exception")
-    error_box.setIcon(QtWidgets.QMessageBox.Critical)
-    error_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
-    error_box.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
+    error_box.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+    error_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+    error_box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
 
     # Show the window
-    error_box.exec_()
+    error_box.exec()
     sys.exit(1)
 
 def exception_message_qthread(excType, excValue, tracebackobj):
@@ -67,12 +67,12 @@ def show_error(message):
     message_box.setText(message)
     message_box.setWindowTitle("Error")
     message_box.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(":/icons/grid.png")))
-    message_box.setIcon(QtWidgets.QMessageBox.Critical)
-    message_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
-    message_box.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
+    message_box.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+    message_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+    message_box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
 
     #Show the window
-    message_box.exec_()
+    message_box.exec()
 
 def show_notification(message):
     """Display "message" in a "Information" message box with 'OK' button."""
@@ -84,11 +84,11 @@ def show_notification(message):
     message_box.setWindowTitle("Note")
     message_box.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(":/icons/grid.png")))
     message_box.setIcon(QtWidgets.QMessageBox.Information)
-    message_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
-    message_box.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
+    message_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+    message_box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
 
     #Show the window
-    message_box.exec_()
+    message_box.exec()
 
 class CustomDialog(QtWidgets.QDialog):
 

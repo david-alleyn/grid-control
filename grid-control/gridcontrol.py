@@ -12,14 +12,11 @@ import helper
 
 import platform 
 plt = platform.system()
-if plt == "Windows":
-    import openhwmon
-else:
-    import sensors
+import sensors
 import polling
-import serial
 import settings
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt6 import QtCore, QtWidgets, QtGui
+from PyQt6.QtSerialPort import QSerialPort
 from ui.mainwindow import Ui_MainWindow
 
 # Define status icons (available in the resource file built with "pyrcc5"
@@ -27,7 +24,7 @@ ICON_RED_LED = ":/icons/led-red-on.png"
 ICON_GREEN_LED = ":/icons/green-led-on.png"
 
 class GridControl(QtWidgets.QMainWindow):
-    """Create the UI, based on PyQt5.
+    """Create the UI, based on PyQt6.
     The UI elements are defined in "mainwindow.py" and resource file "resources_rc.py", created in QT Designer.
 
     To update "mainwindow.py":
@@ -54,12 +51,8 @@ class GridControl(QtWidgets.QMainWindow):
         self.lock = threading.Lock()
 
         # Serial communication object
-        self.ser = serial.Serial()
-
-        # Initialize WMI communication with OpenHardwareMonitor
-        # "initialize_hwmon()" returns a WMI object
-        if plt == "Windows":
-            self.hwmon = openhwmon.initialize_hwmon()
+        # self.ser = serial.Serial()
+        self.ser = QSerialPort()
 
         # QSettings object for storing the UI configuration in the OS native repository (Registry for Windows, ini-file for Linux)
         # In Windows, parameters will be stored at HKEY_CURRENT_USER/SOFTWARE/GridControl/App
@@ -72,25 +65,19 @@ class GridControl(QtWidgets.QMainWindow):
         self.ui.comboBoxComPorts.addItems(self.serial_ports)
 
         # Read saved UI configuration
-        if plt == "Windows":
-            settings.read_settings(self.config, self.ui, self.hwmon)
-        else:
-            settings.read_settings(self.config, self.ui, 0)
+        settings.read_settings(self.config, self.ui)
 
 
 
         # Populates the tree widget on tab "Sensor Config" with values from OpenHardwareMonitor
-        if plt == "Windows":
-            openhwmon.populate_tree(self.hwmon, self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
-        else:
-            sensors.populate_tree(self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
+        sensors.populate_tree(self.ui.treeWidgetSensorData, self.ui.checkBoxStartSilently.isChecked())
 
         # System tray icon
         self.trayIcon = SystemTrayIcon(QtGui.QIcon(QtGui.QPixmap(":/icons/grid.png")), self)
         self.trayIcon.show()
 
 
-        # Create a QThread object that will poll the Grid for fan rpm and voltage and HWMon for temperatures
+        # Create a QThread object that will poll the Grid for fan rpm and voltage for temperatures
         # The lock is needed in all operations with the serial port
         self.thread = polling.PollingThread(polling_interval=int(self.ui.comboBoxPolling.currentText()),
                                             ser=self.ser,
@@ -256,8 +243,8 @@ class GridControl(QtWidgets.QMainWindow):
         # Connect update signal to fan update function
         self.thread.update_signal.connect(self.update_fan_speed)
 
-        # Connect CPU and GPU temperature signals (from polling thread) to function for updating HWMon status
-        self.thread.hwmon_status_signal.connect(self.ui.labelHWMonStatus.setText)
+        # Connect CPU and GPU temperature signals (from polling thread) to function for updating status
+        self.thread.status_signal.connect(self.ui.labelStatus.setText)
 
         # Connect exception signal to show exception message from running thread
         # This is needed as it's not possible to show a message box widget from the QThread directly
@@ -316,25 +303,25 @@ class GridControl(QtWidgets.QMainWindow):
         self.ui.treeWidgetSensorData.setHeaderLabels(["Node", "ID", "Temp (at init)"])
         self.ui.treeWidgetSensorData.expandAll()
         self.ui.treeWidgetSensorData.setSortingEnabled(False)
-        self.ui.treeWidgetSensorData.sortByColumn(0, 0)
+        self.ui.treeWidgetSensorData.sortByColumn(0, QtCore.Qt.SortOrder.AscendingOrder)
         self.ui.treeWidgetSensorData.setColumnWidth(0, 200)
         self.ui.treeWidgetSensorData.setColumnWidth(1, 100)
         self.ui.treeWidgetSensorData.setColumnWidth(2, 50)
         self.ui.treeWidgetSensorData.setColumnHidden(1, True)
-        self.ui.treeWidgetSensorData.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.ui.treeWidgetSensorData.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
 
 
-        # "Selected CPU sensors" tree widget configuration
+        # "Selected CPU sensors" tree widget configurationF
         self.ui.treeWidgetSelectedCPUSensors.setHeaderLabels(["Node", "ID"])
         self.ui.treeWidgetSelectedCPUSensors.setColumnWidth(0, 150)
         self.ui.treeWidgetSelectedCPUSensors.setColumnWidth(1, 50)
-        self.ui.treeWidgetSelectedCPUSensors.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.ui.treeWidgetSelectedCPUSensors.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
 
         # "Selected GPU sensors" tree widget configuration
         self.ui.treeWidgetSelectedGPUSensors.setHeaderLabels(["Node", "ID"])
         self.ui.treeWidgetSelectedGPUSensors.setColumnWidth(0, 150)
         self.ui.treeWidgetSelectedGPUSensors.setColumnWidth(1, 50)
-        self.ui.treeWidgetSelectedGPUSensors.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.ui.treeWidgetSelectedGPUSensors.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
 
         # "Simulate temperatures" group box settings
         self.ui.checkBoxSimulateTemp.setChecked(False)
@@ -477,7 +464,7 @@ class GridControl(QtWidgets.QMainWindow):
 
         # Update status in UI
         self.ui.labelPollingStatus.setText('<b><font color="red">Stopped</font></b>')
-        self.ui.labelHWMonStatus.setText('<b><font color="red">---</font></b>')
+        self.ui.labelStatus.setText('<b><font color="red">---</font></b>')
 
     def initialize_fans(self):
         """Initialize fans to the initial slider values."""
@@ -680,9 +667,9 @@ class GridControl(QtWidgets.QMainWindow):
             sensor_item = QtWidgets.QTreeWidgetItem(parent)
             sensor_item.setText(0, item.text(0))
             sensor_item.setText(1, item.text(1))
-            sensor_item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
+            sensor_item.setForeground(0, QtGui.QBrush(QtCore.Qt.GlobalColor.blue))  # Text color blue
 
-        # Deselect all items in the HWMon tree widget after they have been added
+        # Deselect all items in the tree widget after they have been added
         self.ui.treeWidgetSensorData.clearSelection()
 
     def add_gpu_sensors(self):
@@ -696,9 +683,9 @@ class GridControl(QtWidgets.QMainWindow):
             sensor_item = QtWidgets.QTreeWidgetItem(parent)
             sensor_item.setText(0, item.text(0))
             sensor_item.setText(1, item.text(1))
-            sensor_item.setForeground(0, QtGui.QBrush(QtCore.Qt.blue))  # Text color blue
+            sensor_item.setForeground(0, QtGui.QBrush(QtCore.Qt.GlobalColor.blue))  # Text color blue
 
-        # Deselect all items in the HWMon tree widget after they have been added
+        # Deselect all items in the tree widget after they have been added
         self.ui.treeWidgetSensorData.clearSelection()
 
     def remove_cpu_sensors(self):
@@ -774,7 +761,7 @@ class GridControl(QtWidgets.QMainWindow):
         event.accept()
 
     def changeEvent(self, event):
-        if event.type() == QtCore.QEvent.WindowStateChange:
+        if event.type() == QtCore.QEvent.Type.WindowStateChange:
             if self.windowState() & QtCore.Qt.WindowMinimized:
                 if self.ui.checkBoxMinimizeToTray.isChecked():
                     event.ignore()
@@ -840,4 +827,4 @@ if __name__ == "__main__":
     win.setFixedSize(win.size())
 
     # Start QT application
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
