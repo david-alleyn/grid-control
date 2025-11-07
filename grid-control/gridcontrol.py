@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
     gridcontrol.py
     --------------
@@ -243,9 +245,6 @@ class GridControl(QtWidgets.QMainWindow):
         # Connect update signal to fan update function
         self.thread.update_signal.connect(self.update_fan_speed)
 
-        # Connect CPU and GPU temperature signals (from polling thread) to function for updating status
-        self.thread.status_signal.connect(self.ui.labelStatus.setText)
-
         # Connect exception signal to show exception message from running thread
         # This is needed as it's not possible to show a message box widget from the QThread directly
         self.thread.exception_signal.connect(self.thread_exception_handling)
@@ -464,7 +463,6 @@ class GridControl(QtWidgets.QMainWindow):
 
         # Update status in UI
         self.ui.labelPollingStatus.setText('<b><font color="red">Stopped</font></b>')
-        self.ui.labelStatus.setText('<b><font color="red">---</font></b>')
 
     def initialize_fans(self):
         """Initialize fans to the initial slider values."""

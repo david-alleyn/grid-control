@@ -51,10 +51,8 @@ class PollingThread(QtCore.QThread):
     pixmap_signal_fan6 = QtCore.pyqtSignal(str)
 
     # Signals handling CPU and GPU temperatures
-    cpu_temp_signal = QtCore.pyqtSignal(int)
-    gpu_temp_signal = QtCore.pyqtSignal(int)
-
-    status_signal = QtCore.pyqtSignal(str)
+    cpu_temp_signal = QtCore.pyqtSignal(float)
+    gpu_temp_signal = QtCore.pyqtSignal(float)
 
     # Signal to indicate fan speed should be updated
     update_signal = QtCore.pyqtSignal()
@@ -215,12 +213,6 @@ class PollingThread(QtCore.QThread):
                 # Emit temperature signals
                 self.cpu_temp_signal.emit(current_cpu_temp)
                 self.gpu_temp_signal.emit(current_gpu_temp)
-
-                # If both CPU and GPU temp are 0, set OpenHardwareMonitor status to "Disconnected"
-                if current_cpu_temp == current_gpu_temp == 0:
-                    self.status_signal.emit('<b><font color="red">---</font></b>')
-                else:
-                    self.status_signal.emit('<b><font color="green">Connected</font></b>')
 
                 # Read rpm for all fans
                 fans_rpm = grid.read_fan_rpm(self.ser, self.lock)
