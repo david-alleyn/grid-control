@@ -106,7 +106,7 @@ class GridControl(QtWidgets.QMainWindow):
 
         # Minimize to tray if enabled
         if self.ui.checkBoxStartMinimized.isChecked():
-            self.setWindowState(QtCore.Qt.WindowMinimized)
+            self.setWindowState(QtCore.Qt.WindowState.WindowMinimized)
         else:
             self.show()
 
@@ -760,7 +760,7 @@ class GridControl(QtWidgets.QMainWindow):
 
     def changeEvent(self, event):
         if event.type() == QtCore.QEvent.Type.WindowStateChange:
-            if self.windowState() & QtCore.Qt.WindowMinimized:
+            if self.windowState() & QtCore.Qt.WindowState.WindowMinimized:
                 if self.ui.checkBoxMinimizeToTray.isChecked():
                     event.ignore()
                     self.minimize_to_tray()
@@ -779,7 +779,7 @@ class GridControl(QtWidgets.QMainWindow):
         # self.trayIcon.show()
 
     def restore_from_tray(self):
-        self.setWindowState(self.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+        self.setWindowState(self.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
         self.activateWindow()
         self.show()
         # self.trayIcon.hide()
@@ -801,7 +801,7 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
         self.setContextMenu(menu)
 
     def on_systemTrayIcon_activated(self, reason):
-        if reason == QtWidgets.QSystemTrayIcon.DoubleClick:
+        if reason == QtWidgets.QSystemTrayIcon.ActivationReason.DoubleClick:
             self.parent.toggle_visibility()
 
 
@@ -816,7 +816,7 @@ if __name__ == "__main__":
     win = GridControl()
 
     # Set program version
-    win.setWindowTitle("Grid Control 1.0.9")
+    win.setWindowTitle("Grid Control")
 
     # Show window
     #win.show()

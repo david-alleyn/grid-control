@@ -130,7 +130,7 @@ QTreeWidget {
         <string notr="true"/>
        </property>
        <property name="title">
-        <string>Current GPU temp</string>
+        <string>Current CPU Temp</string>
        </property>
        <widget class="QLabel" name="label_192">
         <property name="geometry">
@@ -1757,16 +1757,6 @@ QTreeWidget {
         </property>
         <item>
          <property name="text">
-          <string>1</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>100</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
           <string>500</string>
          </property>
         </item>
@@ -1822,7 +1812,7 @@ QTreeWidget {
         </font>
        </property>
        <property name="title">
-        <string>Current GPU temp</string>
+        <string>Current GPU Temp</string>
        </property>
        <widget class="QLabel" name="label_203">
         <property name="geometry">
