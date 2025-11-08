@@ -44,7 +44,8 @@ def open_serial(ser, lock):
             open_success = ser.open(QIODeviceBase.OpenModeFlag.ReadWrite)
             if not open_success:
                 raise Exception("Failed to open serial port")
-            ser.waitForReadyRead(0)
+            time.sleep(WAIT_GRID)
+            ser.waitForReadyRead(40)
             ser.readAll()
     except Exception as e:
         helper.show_error("Could not open serial port " + ser.portName() + ".\n\n"
@@ -63,38 +64,37 @@ def initialize_grid(ser, lock):
 
     try:
         with lock:
-            ser.flush
             ser.clear(QSerialPort.Direction.AllDirections)
-            # Write data to serial port to initialize the Grid
-            wrote_data = ser.writeData(bytes([0xC0]))
-            # Wait before checking response
-            time.sleep(WAIT_GRID)
-            ser.waitForBytesWritten(0)
-            time.sleep(WAIT_GRID)
-            ser.waitForReadyRead(0)
 
-            # Read response, one byte = 0x21 is expected for a successful initialization
-            response = bytes(ser.readAll())
+            ready = False
 
-            # Check if the Grid responded with any data
-            if response:
-                # Check for correct response (should be 0x21)
-                if response[0] == int("0x21", 16):
-                    return True
+            while not ready:
+                # Write data to serial port to initialize the Grid
+                ser.writeData(bytes([0xC0]))
+                ser.waitForBytesWritten(40)
 
-                # Incorrect response received from the grid
-                else:
-                    helper.show_error("Problem initializing the Grid unit.\n\n"
-                                      "Response 0x21 expected, got " + hex(response[0]) + ".\n\n"
-                                      "Please check serial port " + ser.portName() +".\n")
-                    return False
+                # Read response, one byte = 0x21 is expected for a successful initialization
+                response = bytes()
 
-            # In case no response (0 bytes) from the Grid
-            else:
-                helper.show_error("Problem initializing the Grid unit.\n\n"
-                                  "Response 0x21 expected, no response received.\n\n"
-                                   "Please check serial port " + ser.portName() +".\n")
-                return False
+                while len(response) < 1:
+                    ser.waitForReadyRead(40)
+                    if ser.bytesAvailable() == 1:
+                        response += bytes(ser.readAll())
+                        print(len(response))
+                    else:
+                        print("Available bytes: " + str(ser.bytesAvailable()))
+                        print("Waiting for Grid response...")
+                        time.sleep(0.02)
+
+                # Check if the Grid responded with any data
+                if response:
+                    # Check for correct response (should be 0x21)
+                    if response[0] == int("0x21", 16):
+                        ready = True
+                    # else: we probably received an old response, try again
+
+
+            return True
 
     except Exception as e:
             helper.show_error("Problem initializing the Grid unit.\n\n"
@@ -148,14 +148,22 @@ def set_fan(ser, fan, voltage, lock):
     try:
         with lock:
             ser.writeData(bytes(serial_data))
+            ser.waitForBytesWritten(40)
 
-            time.sleep(WAIT_GRID)
-            ser.waitForBytesWritten(0)
-            time.sleep(WAIT_GRID)
-            ser.waitForReadyRead(0)
-            # TODO: Check reponse
-            # Expected response is one byte
-            ser.readData(1)
+            response = bytes()
+
+            while len(response) < 1:
+                ser.waitForReadyRead(40)
+                if ser.bytesAvailable() == 1:
+                    response += bytes(ser.readAll())
+                    print(len(response))
+                else:
+                    print("Available bytes: " + str(ser.bytesAvailable()))
+                    print("Waiting to set fan " + str(fan) + "...")
+                    time.sleep(0.02)
+
+            response
+            
     except Exception as e:
         print("Could not set speed for fan " + str(fan) + ".\n\n"
               "Please check settings for serial port " + ser.portName() + ".\n\n"
@@ -182,18 +190,22 @@ def read_fan_rpm(ser, lock):
 
                 # TODO: Check bytes written
                 ser.writeData(bytes(serial_data))
+                ser.waitForBytesWritten(40)
                 # Wait before checking response
 
-                
-
-
-                time.sleep(WAIT_GRID)
-                ser.waitForBytesWritten(0)
-                time.sleep(WAIT_GRID)
-                ser.waitForReadyRead(0)
                 # Expected response is 5 bytes
                 # Example response: C0 00 00 03 00 = 0x0300 = 768 rpm (two bytes unsigned)
-                response = bytes(ser.readAll())
+                response = bytes()
+
+                while len(response) < 5:
+                    ser.waitForReadyRead(40)
+                    if ser.bytesAvailable() == 5:
+                        response += bytes(ser.readAll())
+                        print(len(response))
+                    else:
+                        print("Available bytes: " + str(ser.bytesAvailable()))
+                        print("Waiting to read fan " + str(fan) + " RPM...")
+                        time.sleep(0.02)
 
                 # Check if the Grid responded with any data
                 if response:
@@ -240,17 +252,22 @@ def read_fan_voltage(ser, lock):
 
                 # ser.clear(QSerialPort.Direction.Output)
                 ser.writeData(bytes(serial_data))
+                ser.waitForBytesWritten(40)
                 # Wait before checking response
-
-                
-                time.sleep(WAIT_GRID)
-                ser.waitForBytesWritten(0)
-                time.sleep(WAIT_GRID)
-                ser.waitForReadyRead(0)
 
                 # Expected response is 5 bytes
                 # Example response: 00 00 00 0B 01 = 0x0B 0x01 = 11.01 volt
-                response = bytes(ser.readAll())
+                response = bytes()
+
+                while len(response) < 5:
+                    ser.waitForReadyRead(40)
+                    if ser.bytesAvailable() == 5:
+                        response += bytes(ser.readAll())
+                        print(len(response))
+                    else:
+                        print("Available bytes: " + str(ser.bytesAvailable()))
+                        print("Waiting to read fan " + str(fan) + " voltage...")
+                        time.sleep(0.02)
 
                 # Check if the Grid responded with any data
                 if response:
