@@ -31,7 +31,7 @@ The Grid uses a MCP2200 USB-to-UART serial converter from [Microchip](http://www
 ### Python environment and running the application
 Assuming you have latest version of Python 3 installed, the following additional modules are required, install with pip:
 - `pip install pyqt6`
-- `pip install qt6-serialport`
+- `pip install pyserial`
 
 ### Serial port permissions
 Depending on the linux distribution, the port name and permissions may vary.

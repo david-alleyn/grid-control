@@ -18,7 +18,7 @@ import sensors
 import polling
 import settings
 from PyQt6 import QtCore, QtWidgets, QtGui
-from PyQt6.QtSerialPort import QSerialPort
+import serial
 from ui.mainwindow import Ui_MainWindow
 
 # Define status icons (available in the resource file built with "pyrcc5"
@@ -53,8 +53,7 @@ class GridControl(QtWidgets.QMainWindow):
         self.lock = threading.Lock()
 
         # Serial communication object
-        # self.ser = serial.Serial()
-        self.ser = QSerialPort()
+        self.ser = serial.Serial()
 
         # QSettings object for storing the UI configuration in the OS native repository (Registry for Windows, ini-file for Linux)
         # In Windows, parameters will be stored at HKEY_CURRENT_USER/SOFTWARE/GridControl/App

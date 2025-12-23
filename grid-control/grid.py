@@ -8,8 +8,8 @@
 import sys
 import time
 
-from PyQt6.QtCore import QIODeviceBase
-from PyQt6.QtSerialPort import QSerialPort, QSerialPortInfo
+import serial
+from serial.tools import list_ports
 
 import helper
 
@@ -18,19 +18,19 @@ WAIT_GRID = 0.04
 
 def get_serial_ports():
     """Returns a list of all serial ports found, e.g. 'COM1' in Windows"""
-    return sorted([port.portName() for port in QSerialPortInfo.availablePorts()])
+    return sorted([port.device for port in list_ports.comports()])
 
 def setup_serial(ser, port, lock):
     """Setup all parameters for the serial communication"""
     try:
         with lock:
-            ser.setPortName(port)
-            ser.setBaudRate(4800, QSerialPort.Direction.AllDirections)
-            ser.setDataBits(QSerialPort.DataBits.Data8)
-            ser.setParity(QSerialPort.Parity.NoParity)
-            ser.setStopBits(QSerialPort.StopBits.OneStop)
-            ser.setSettingsRestoredOnClose(True)
-            # ser.setReadBufferSize(1024)
+            ser.baudrate = 4800
+            ser.port = port
+            ser.bytesize = serial.EIGHTBITS
+            ser.stopbits = serial.STOPBITS_ONE
+            ser.parity = serial.PARITY_NONE
+            ser.timeout = 0.1  # Read timeout in seconds
+            ser.write_timeout = 0.1  # Write timeout in seconds
     except Exception as e:
         helper.show_error("Problem initializing serial port " + port + ".\n\n"
                           "Exception:\n" + str(e) + "\n\n"
@@ -41,14 +41,9 @@ def open_serial(ser, lock):
     """Open the serial port"""
     try:
         with lock:
-            open_success = ser.open(QIODeviceBase.OpenModeFlag.ReadWrite)
-            if not open_success:
-                raise Exception("Failed to open serial port")
-            time.sleep(WAIT_GRID)
-            ser.waitForReadyRead(40)
-            ser.readAll()
+            ser.open()
     except Exception as e:
-        helper.show_error("Could not open serial port " + ser.portName() + ".\n\n"
+        helper.show_error("Could not open serial port " + ser.port + ".\n\n"
                           "Is another instance of Grid Control running?\n\n"
                           "Exception:\n" + str(e) + "\n\n"
                           "The application will now exit.")
@@ -64,37 +59,39 @@ def initialize_grid(ser, lock):
 
     try:
         with lock:
-            ser.clear(QSerialPort.Direction.AllDirections)
+            # Flush input and output buffers
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
 
-            ready = False
+            # Write data to serial port to initialize the Grid
+            ser.write(serial.to_bytes([0xC0]))
 
-            while not ready:
-                # Write data to serial port to initialize the Grid
-                ser.writeData(bytes([0xC0]))
-                ser.waitForBytesWritten(40)
+            # Wait before checking response
+            time.sleep(WAIT_GRID)
 
-                # Read response, one byte = 0x21 is expected for a successful initialization
-                response = bytes()
+            # Read response, one byte = 0x21 is expected for a successful initialization
+            response = ser.read(size=1)
 
-                while len(response) < 1:
-                    ser.waitForReadyRead(40)
-                    if ser.bytesAvailable() == 1:
-                        response += bytes(ser.readAll())
-                        print(len(response))
-                    else:
-                        print("Available bytes: " + str(ser.bytesAvailable()))
-                        print("Waiting for Grid response...")
-                        time.sleep(0.02)
+            # Check if the Grid responded with any data
+            if response:
+                # Check for correct response (should be 0x21)
+                if response[0] == int("0x21", 16):
+                    print("Grid initialized")
+                    return True
 
-                # Check if the Grid responded with any data
-                if response:
-                    # Check for correct response (should be 0x21)
-                    if response[0] == int("0x21", 16):
-                        ready = True
-                    # else: we probably received an old response, try again
+                # Incorrect response received from the grid
+                else:
+                    helper.show_error("Problem initializing the Grid unit.\n\n"
+                                      "Response 0x21 expected, got " + hex(ord(response)) + ".\n\n"
+                                      "Please check serial port " + ser.port +".\n")
+                    return False
 
-
-            return True
+            # In case no response (0 bytes) from the Grid
+            else:
+                helper.show_error("Problem initializing the Grid unit.\n\n"
+                                  "Response 0x21 expected, no response received.\n\n"
+                                   "Please check serial port " + ser.port +".\n")
+                return False
 
     except Exception as e:
             helper.show_error("Problem initializing the Grid unit.\n\n"
@@ -147,28 +144,18 @@ def set_fan(ser, fan, voltage, lock):
 
     try:
         with lock:
-            ser.writeData(bytes(serial_data))
-            ser.waitForBytesWritten(40)
+            ser.write(serial.to_bytes(serial_data))
+            time.sleep(WAIT_GRID)
 
-            response = bytes()
-
-            while len(response) < 1:
-                ser.waitForReadyRead(40)
-                if ser.bytesAvailable() == 1:
-                    response += bytes(ser.readAll())
-                    print(len(response))
-                else:
-                    print("Available bytes: " + str(ser.bytesAvailable()))
-                    print("Waiting to set fan " + str(fan) + "...")
-                    time.sleep(0.02)
-
-            response
-            
+            # TODO: Check reponse
+            # Expected response is one byte
+            ser.read(size=1)
+            print("Fan " + str(fan) + " updated")
     except Exception as e:
         print("Could not set speed for fan " + str(fan) + ".\n\n"
-              "Please check settings for serial port " + ser.portName() + ".\n\n"
-              "Exception:\n" + str(e) + "\n\n"
-              "It's possible that Grid-Control is competing for CPU resources.")
+                          "Please check settings for serial port " + str(ser.port) + ".\n\n"
+                          "Exception:\n" + str(e) + "\n\n"
+                          "It's possible that Grid-Control is competing for CPU resources.")
 
 def read_fan_rpm(ser, lock):
     """Reads the current rpm of each fan.
@@ -188,24 +175,16 @@ def read_fan_rpm(ser, lock):
                 # 8A <fan id>
                 serial_data = [0x8A, fan]
 
+                ser.reset_output_buffer()
                 # TODO: Check bytes written
-                ser.writeData(bytes(serial_data))
-                ser.waitForBytesWritten(40)
+                ser.write(serial.to_bytes(serial_data))
+
                 # Wait before checking response
+                time.sleep(WAIT_GRID)
 
                 # Expected response is 5 bytes
                 # Example response: C0 00 00 03 00 = 0x0300 = 768 rpm (two bytes unsigned)
-                response = bytes()
-
-                while len(response) < 5:
-                    ser.waitForReadyRead(40)
-                    if ser.bytesAvailable() == 5:
-                        response += bytes(ser.readAll())
-                        print(len(response))
-                    else:
-                        print("Available bytes: " + str(ser.bytesAvailable()))
-                        print("Waiting to read fan " + str(fan) + " RPM...")
-                        time.sleep(0.02)
+                response = ser.read(size=5)
 
                 # Check if the Grid responded with any data
                 if response:
@@ -225,7 +204,7 @@ def read_fan_rpm(ser, lock):
 
             except Exception as e:
                 print("Could not read speed for fan " + str(fan) + ".\n\n"
-                          "Please check settings for serial port " + ser.portName() + ".\n\n"
+                          "Please check settings for serial port " + str(ser.port) + ".\n\n"
                           "Exception:\n" + str(e) + "\n\n"
                           "It's possible that Grid-Control is competing for CPU resources.")
 
@@ -250,24 +229,15 @@ def read_fan_voltage(ser, lock):
                 # Format is two bytes, e.g. [0x84, <fan id>]
                 serial_data = [0x84, fan]
 
-                # ser.clear(QSerialPort.Direction.Output)
-                ser.writeData(bytes(serial_data))
-                ser.waitForBytesWritten(40)
+                ser.reset_output_buffer()
+                ser.write(serial.to_bytes(serial_data))
+
                 # Wait before checking response
+                time.sleep(WAIT_GRID)
 
                 # Expected response is 5 bytes
                 # Example response: 00 00 00 0B 01 = 0x0B 0x01 = 11.01 volt
-                response = bytes()
-
-                while len(response) < 5:
-                    ser.waitForReadyRead(40)
-                    if ser.bytesAvailable() == 5:
-                        response += bytes(ser.readAll())
-                        print(len(response))
-                    else:
-                        print("Available bytes: " + str(ser.bytesAvailable()))
-                        print("Waiting to read fan " + str(fan) + " voltage...")
-                        time.sleep(0.02)
+                response = ser.read(size=5)
 
                 # Check if the Grid responded with any data
                 if response:
@@ -280,7 +250,7 @@ def read_fan_voltage(ser, lock):
 
                     # An incorrect response was received
                     else:
-                        print("Error reading fan voltage, incorrect response: " + response.hex())
+                        print("Error reading fan voltage, incorrect response")
                         return []
 
                 # In case no response (0 bytes) is returned from the Grid
@@ -290,7 +260,7 @@ def read_fan_voltage(ser, lock):
 
             except Exception as e:
                 helper.show_error("Could not read fan voltage.\n\n"
-                                  "Please check serial port " + ser.portName() + ".\n\n"
+                                  "Please check serial port " + ser.port + ".\n\n"
                                   "Exception:\n" + str(e) + "\n\n"
                                   "The application will now exit.")
                 print(str(e))
